@@ -12,9 +12,11 @@ SPEEDS = (0.5, 1.0, 2.0, 3.0)
 @pytest.mark.performance
 @pytest.mark.skip(reason="TODO: implement test")
 def test_measure_pulse_cycle(animation_page):
-    # TODO 1: Выбрать Pulse и скорость 1.0.
-    # TODO 2: Запустить анимацию.
-    # TODO 3: Измерить один цикл через measure_animation_cycle.
+    # TODO 1: Реализовать measure_animation_cycle в metrics_helper.py (см. TODO в методе).
+    # TODO 2: Выбрать Pulse и скорость 1.0.
+    # TODO 3: Запустить анимацию.
+    # TODO 4: Измерить один цикл через measure_animation_cycle.
+    # TODO 5: Проверить, что durationMs > 200.
     pass
 
 

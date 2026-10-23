@@ -74,11 +74,13 @@ result, ms = measure_duration(lambda: client.get("/api/room"))
 stats = calculate_statistics([ms])
 ```
 
-Для анимаций:
+Для анимаций (метод `measure_animation_cycle` реализует студент в лабораторной 4):
 
 ```python
 from tests.helpers.metrics_helper import measure_animation_cycle
+# анимация уже запущена
 sample = measure_animation_cycle(driver)
+# sample["durationMs"], sample["configuredMs"]
 ```
 
 ## Графики

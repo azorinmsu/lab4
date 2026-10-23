@@ -35,6 +35,14 @@ def write_student_api(target: Path, load_model: bool = False, search: bool = Fal
     target.write_text(text, encoding="utf-8")
 
 
+def write_metrics_helper_with_cycle(target: Path) -> None:
+    text = (ROOT / "tests" / "helpers" / "metrics_helper.py").read_text(encoding="utf-8")
+    body = (SRC / "04" / "measure_animation_cycle.py").read_text(encoding="utf-8").rstrip() + "\n\n\n"
+    start = text.index("def measure_animation_cycle(")
+    end = text.index("\ndef collect_cycle_measurements(")
+    target.write_text(text[:start] + body + text[end:], encoding="utf-8")
+
+
 PATCHES = [
     {
         "name": "01-model-loading.patch",
@@ -54,7 +62,10 @@ PATCHES = [
     },
     {
         "name": "04-animation-cycle.patch",
-        "files": {"tests/performance/test_animation_cycle.py": SRC / "04" / "test_animation_cycle.py"},
+        "files": {
+            "tests/helpers/metrics_helper.py": write_metrics_helper_with_cycle,
+            "tests/performance/test_animation_cycle.py": SRC / "04" / "test_animation_cycle.py",
+        },
     },
     {
         "name": "05-session-performance.patch",
