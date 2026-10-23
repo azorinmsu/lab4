@@ -3,62 +3,75 @@
 from __future__ import annotations
 
 import pytest
+from selenium.webdriver.common.by import By
+
+from tests.helpers.animation_helper import start_animation, wait_for_animation_state
+from tests.helpers.browser_helper import wait_for_condition
+from tests.helpers.model_helper import get_loaded_model_status, get_model_load_error, is_3d_visible
+from tests.helpers.session_helper import get_room_state
 
 
+def _wait_status(driver, text):
+    wait_for_condition(driver, lambda d: text.lower() in get_loaded_model_status(d).lower())
+
+
+# Сквозная загрузка модели через выбранный источник.
 @pytest.mark.student
 @pytest.mark.e2e
-@pytest.mark.skip(reason="TODO: implement test")
 def test_load_model_from_source_end_to_end(animation_page, lab_config):
-    # TODO 1: Войти в сессию (фикстура уже делает это).
-    # TODO 2: Загрузить модель через выбранный источник.
-    # TODO 3: Проверить статус и имя модели.
-    pass
+    animation_page.load_model("http", "slide-square")
+    _wait_status(animation_page.driver, "Slide Square")
+    assert "Slide Square" in animation_page.driver.find_element(By.ID, "loadedModelName").text
 
 
+# Загруженная модель появляется на игровом поле.
 @pytest.mark.student
 @pytest.mark.e2e
-@pytest.mark.skip(reason="TODO: implement test")
 def test_loaded_model_appears_on_stage(animation_page):
-    # TODO 1: Загрузить CSS-модель.
-    # TODO 2: Проверить #shape или #model3d на сцене.
-    pass
+    animation_page.load_model("local", "cube-3d")
+    _wait_status(animation_page.driver, "CSS Cube")
+    animation_page.set_3d(True)
+    wait_for_condition(animation_page.driver, lambda d: is_3d_visible(d))
+    assert is_3d_visible(animation_page.driver)
 
 
+# После загрузки анимация запускается.
 @pytest.mark.student
 @pytest.mark.e2e
-@pytest.mark.skip(reason="TODO: implement test")
 def test_start_animation_after_load(animation_page):
-    # TODO 1: Загрузить модель.
-    # TODO 2: Нажать Старт.
-    # TODO 3: Дождаться активного состояния анимации.
-    pass
+    animation_page.load_model("local", "pulse-circle")
+    _wait_status(animation_page.driver, "Pulse Circle")
+    start_animation(animation_page.driver)
+    wait_for_animation_state(animation_page.driver, True)
 
 
+# Сессия и комната остаются живыми после загрузки.
 @pytest.mark.student
 @pytest.mark.e2e
-@pytest.mark.skip(reason="TODO: implement test")
 def test_model_load_visible_in_session_feed(animation_page, app_server):
-    # TODO 1: Загрузить модель.
-    # TODO 2: При необходимости отправить действие через UI.
-    # TODO 3: Проверить ленту или /api/room, если сценарий это поддерживает.
-    pass
+    animation_page.load_model("local", "fade-circle")
+    _wait_status(animation_page.driver, "Fade Circle")
+    room = get_room_state(app_server["url"])
+    assert any(user["name"] == animation_page.user_name for user in room["users"])
+    assert "сессии" in animation_page.session_badge.lower()
 
 
+# После ошибки можно снова загрузить корректную модель.
 @pytest.mark.student
 @pytest.mark.e2e
-@pytest.mark.skip(reason="TODO: implement test")
 def test_recover_after_failed_load(animation_page, lab_config):
-    # TODO 1: Вызвать ошибку загрузки.
-    # TODO 2: Затем загрузить корректную локальную модель.
-    # TODO 3: Проверить восстановление статуса.
-    pass
+    animation_page.load_model("errors", "pulse-circle")
+    wait_for_condition(animation_page.driver, lambda d: get_model_load_error(d) != "")
+    animation_page.load_model("local", "rotate-square")
+    _wait_status(animation_page.driver, "Rotate Square")
+    assert "Rotate Square" in get_loaded_model_status(animation_page.driver)
 
 
+# Загрузка не разрывает пользовательскую сессию.
 @pytest.mark.student
 @pytest.mark.e2e
-@pytest.mark.skip(reason="TODO: implement test")
 def test_load_model_in_user_session(animation_page, isolated_room):
-    # TODO 1: Убедиться, что пользователь в сессии.
-    # TODO 2: Загрузить модель.
-    # TODO 3: Проверить, что сессия осталась активной.
-    pass
+    assert animation_page.driver.execute_script("return document.body.classList.contains('session-active');")
+    animation_page.load_model("cdn", "pulse-circle")
+    _wait_status(animation_page.driver, "Pulse Circle")
+    assert animation_page.driver.execute_script("return document.body.classList.contains('session-active');")

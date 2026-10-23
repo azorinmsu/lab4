@@ -22,8 +22,26 @@
    * - showModelLoadError()
    */
   async function loadModel(sourceType, modelId) {
-    // TODO: Реализовать загрузку.
-    throw new Error("Not implemented");
+    try {
+      const base = getConfiguredSourceBaseUrl(sourceType);
+      if (!base) {
+        throw new Error("Неизвестный источник");
+      }
+      if (!modelId) {
+        throw new Error("Не указан идентификатор модели");
+      }
+      const url = `${String(base).replace(/\/$/, "")}/${modelId}.json`;
+      const data = await fetchModelResource(url);
+      if (!validateModelData(data)) {
+        throw new Error("Некорректные данные модели");
+      }
+      const model = normalizeModelData({ ...data, source: sourceType });
+      renderLoadedModel(model);
+      return model;
+    } catch (err) {
+      showModelLoadError(err.message || String(err));
+      throw err;
+    }
   }
 
   /**
