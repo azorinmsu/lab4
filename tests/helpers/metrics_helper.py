@@ -138,8 +138,43 @@ def measure_animation_cycle(driver: WebDriver, effect_index: int = 0) -> dict[st
     - В браузере удобны Web Animations API и performance.now()
       (через driver.execute_async_script).
     """
-    # TODO: Реализовать измерение одного цикла анимации.
-    raise NotImplementedError("TODO: implement measure_animation_cycle")
+    wait_for_running_animations(driver, minimum=effect_index + 1)
+    infos = get_running_animations_info(driver)
+    if effect_index >= len(infos):
+        raise RuntimeError("Нет анимации для измерения")
+    result = driver.execute_async_script(
+        """
+        const index = arguments[0];
+        const done = arguments[1];
+        const actor = document.getElementById('actor');
+        const animations = actor.getAnimations();
+        const animation = animations[index];
+        if (!animation || !animation.effect) {
+            done({error: 'missing'});
+            return;
+        }
+        const duration = animation.effect.getComputedTiming().duration;
+        const startedAt = performance.now();
+        const origin = animation.currentTime || 0;
+        function tick() {
+            const elapsedAnim = (animation.currentTime || 0) - origin;
+            if (elapsedAnim >= duration) {
+                done({
+                    durationMs: performance.now() - startedAt,
+                    configuredMs: duration,
+                    effectIndex: index
+                });
+                return;
+            }
+            requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+        """,
+        effect_index,
+    )
+    if not result or "durationMs" not in result:
+        raise RuntimeError(result.get("error") if isinstance(result, dict) else "Не удалось измерить цикл")
+    return result
 
 
 def collect_cycle_measurements(
